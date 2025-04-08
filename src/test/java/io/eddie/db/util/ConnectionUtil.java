@@ -38,8 +38,6 @@ public class ConnectionUtil {
             );
 */
 
-            log.info("Connection = {} ", connection);
-
             return connection;
 
         } catch (SQLException e) {
