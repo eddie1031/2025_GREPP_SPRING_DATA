@@ -8,10 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StatementTests {
 
     Connection conn;
+    PreparedStatement pstmt;
     Statement stmt;
     ResultSet rs;
 
@@ -41,6 +39,14 @@ public class StatementTests {
         if ( stmt != null ) {
             try {
                 stmt.close();
+            } catch (SQLException e) {
+                log.error(e.getMessage());
+            }
+        }
+
+        if ( pstmt != null ) {
+            try {
+                pstmt.close();
             } catch (SQLException e) {
                 log.error(e.getMessage());
             }
@@ -124,7 +130,7 @@ public class StatementTests {
     void statement_test() throws Exception {
 
         // SELECT m.member_id, m.username, m.password FROM member as m WHERE m.username = 'admin' AND m.password = '' or '' = ''
-        Member admin = genMember("admin", "");
+        Member admin = genMember("admin", "' or '' = '");
         String sql = genSelectQuery(admin);
 
         stmt = conn.createStatement();
@@ -138,9 +144,41 @@ public class StatementTests {
             findMember.setPassword(rs.getString("password"));
         }
 
-        log.info("findMember = {}", findMember);
+        assertThat(findMember.getUsername()).isEqualTo("admin");
+        assertThat(findMember.getPassword()).isEqualTo("admin");
 
     }
+
+    @Test
+    @DisplayName("test")
+    void _test() throws Exception {
+
+        // SELECT m.member_id, m.username, m.password FROM member as m
+        // WHERE m.username = ? AND m.password = ?
+        Member unsafeAttempt = genMember("admin", "' or '' = '");
+
+        String sql = "SELECT m.member_id, m.username, m.password FROM member as m WHERE m.username = ? AND m.password = ?";
+
+        pstmt = conn.prepareStatement(sql);
+
+        pstmt.setString(1, unsafeAttempt.getUsername());
+        pstmt.setString(2, unsafeAttempt.getPassword());
+
+        rs = pstmt.executeQuery();
+
+        Member findMember = new Member();
+
+        if ( rs.next() ) {
+            findMember.setMemberId(rs.getInt("member_id"));
+            findMember.setUsername(rs.getString("username"));
+            findMember.setPassword(rs.getString("password"));
+        }
+
+        assertThat(findMember.getUsername()).isNull();
+        assertThat(findMember.getPassword()).isNull();
+
+    }
+
 
     private static String genSelectQuery(Member member) {
         return "SELECT m.member_id, m.username, m.password FROM member as m WHERE m.username = '%s' AND m.password = '%s'".formatted(member.getUsername(), member.getPassword());
