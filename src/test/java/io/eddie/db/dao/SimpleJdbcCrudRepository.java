@@ -99,10 +99,51 @@ public class SimpleJdbcCrudRepository implements SimpleCrudRepository {
     @Override
     public void update(Member member) {
 
+        String sql = "update member set password = ? where member_id = ?";
+
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+
+        try {
+
+            connection = getConnection();
+            preparedStatement = connection.prepareStatement(sql);
+
+            preparedStatement.setString(1, member.getPassword());
+            preparedStatement.setInt(2, member.getMemberId());
+
+            preparedStatement.executeUpdate();
+
+        } catch ( SQLException e ) {
+
+        } finally {
+            closeConnection(connection, preparedStatement, null);
+        }
+
     }
 
     @Override
-    public void remove(Integer id) {
+    public void remove(Integer id) throws SQLException {
+
+        String sql = "delete from member where member_id = ?";
+
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+
+        try {
+
+            connection = getConnection();
+            preparedStatement = connection.prepareStatement(sql);
+
+            preparedStatement.setInt(1, id);
+
+            preparedStatement.executeUpdate();
+
+        } catch ( SQLException e ) {
+            throw e;
+        } finally {
+            closeConnection(connection, preparedStatement, null);
+        }
 
     }
 

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -88,6 +89,53 @@ class SimpleJdbcCrudRepositoryTests {
 
     }
 
+    @Test
+    @DisplayName("update test")
+    void update_test() throws Exception {
 
+        int availableIdx = 1;
+
+        Optional<Member> memberOptional = repository.findById(availableIdx);
+        boolean result = memberOptional.isPresent();
+        assertThat(result).isTrue();
+
+        Member findMember = memberOptional.get();
+        String targetPwd = UUID.randomUUID().toString();
+
+        findMember.setPassword(targetPwd);
+        repository.update(findMember);
+
+        Optional<Member> findMemberOptional = repository.findById(availableIdx);
+        boolean result2 = findMemberOptional.isPresent();
+        assertThat(result2).isTrue();
+
+        Member updatedMember = findMemberOptional.get();
+
+        log.info("updatedMember = {}", updatedMember);
+
+        assertThat(updatedMember.getMemberId()).isEqualTo(findMember.getMemberId());
+        assertThat(updatedMember.getUsername()).isEqualTo(findMember.getUsername());
+        assertThat(updatedMember.getPassword()).isEqualTo(targetPwd);
+
+    }
+
+    @Test
+    @DisplayName("remove test")
+    void remove_test() throws Exception {
+
+        int targetId = 2;
+        repository.remove(targetId);
+
+        Optional<Member> memberOptional = repository.findById(targetId);
+        boolean result = memberOptional.isPresent();
+        assertThat(result).isFalse();
+
+        assertThatThrownBy(
+                () -> {
+                    memberOptional.get();
+                }
+        ).isInstanceOf(NoSuchElementException.class);
+
+    }
 
 }
